@@ -1,0 +1,5 @@
+# cat=basic/enable; type=boolean; label=Enable parsing
+enable.parsing = 0
+
+# cat=content/typo; type=string; label=File size units
+format.fileSizeUnits = o|ko|mo|gp|to|po|eo|zo|yo
