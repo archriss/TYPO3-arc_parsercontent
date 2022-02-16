@@ -3,7 +3,7 @@
     "description": "A simple parsercontent extension. No plugin, just a middleware parsing rte content",
     "type": "typo3-cms-extension",
     "require": {
-        "typo3/cms-core": "^10.4"
+        "typo3/cms-core": "^9.5 || ^10.4"
     },
     "license": "GPL-2.0",
     "extra": {
