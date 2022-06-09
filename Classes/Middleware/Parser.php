@@ -116,7 +116,7 @@ class Parser implements MiddlewareInterface
                 $patternFile = '/([a-zA-Z0-9-_\\/\\.]+\\.' . $extFile . ')/is';
                 preg_match_all($patternFile, $transformedParts[$i], $matches, PREG_SET_ORDER);
                 if (count($matches)) {
-                    foreach ($matches as $file) {
+                    foreach (self::uniquify($matches) as $file) {
                         if (isset($file[0]) && is_file($_SERVER['DOCUMENT_ROOT'] . $file[0])) {
                             $size = GeneralUtility::formatSize(
                                 filesize($_SERVER['DOCUMENT_ROOT'] . $file[0]),
@@ -167,5 +167,23 @@ class Parser implements MiddlewareInterface
         }
 
         return str_replace($originalParts, $transformedParts, $content, $count);
+    }
+
+    /**
+     * @param array $array
+     * @return array
+     */
+    protected static function uniquify(array $array)
+    {
+        return array_reduce(
+            $array,
+            function ($carry, $item) {
+                if (!in_array($item, $carry)) {
+                    $carry[] = $item;
+                }
+                return $carry;
+            },
+            []
+        );
     }
 }
