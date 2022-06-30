@@ -77,8 +77,10 @@ class Parser implements MiddlewareInterface
             $body->rewind();
             $response = $response->withBody(
                 $this->getNewBody(
-                    $this->parseContent(
-                        $body->getContents()
+                    $this->parseFile(
+                        $this->parseContent(
+                            $body->getContents()
+                        )
                     )
                 )
             );
@@ -118,10 +120,7 @@ class Parser implements MiddlewareInterface
                 if (count($matches)) {
                     foreach (self::uniquify($matches) as $file) {
                         if (isset($file[0]) && is_file($_SERVER['DOCUMENT_ROOT'] . $file[0])) {
-                            $size = GeneralUtility::formatSize(
-                                filesize($_SERVER['DOCUMENT_ROOT'] . $file[0]),
-                                $this->fileSizeUnits
-                            );
+                            $size = $this->fileSize($_SERVER['DOCUMENT_ROOT'] . $file[0]);
                             $patternUri = '#<a href="' . $file[0] . '"(.*)>(.*)</a>#Us';
                             $transformedParts[$i] = preg_replace(
                                 $patternUri,
@@ -167,6 +166,55 @@ class Parser implements MiddlewareInterface
         }
 
         return str_replace($originalParts, $transformedParts, $content, $count);
+    }
+
+    /**
+     * @param string $content
+     * @return string
+     */
+    protected function parseFile($content)
+    {
+        // Patern used to find all RTE occurency
+        $partsPattern = '/(<!--FILEPARSER_begin-->)(.*?)(<!--FILEPARSER_end-->)/si';
+        preg_match_all($partsPattern, $content, $tempParts);
+        $originalParts = $transformedParts = $tempParts[0];
+        $originalPartsCount = count($originalParts);
+
+        // Parse all found parts
+        for ($i = 0; $i < $originalPartsCount; $i++) {
+            // Files link
+            foreach ($this->typeFileParse as $extFile => $icon) {
+                $patternFile = '/([a-zA-Z0-9-_\\/\\.]+\\.' . $extFile . ')/is';
+                preg_match_all($patternFile, $transformedParts[$i], $matches, PREG_SET_ORDER);
+                if (count($matches)) {
+                    foreach (self::uniquify($matches) as $file) {
+                        if (isset($file[0]) && is_file($_SERVER['DOCUMENT_ROOT'] . $file[0])) {
+                            $size = $this->fileSize($_SERVER['DOCUMENT_ROOT'] . $file[0]);
+                            $patternUri = '#<a href="' . $file[0] . '"(.*)>(.*)</a>#Us';
+                            $transformedParts[$i] = preg_replace(
+                                $patternUri,
+                                '<a href="' . $file[0] . '"$1>$2 (' . strtolower($extFile). ' - ' . $size . ')</a>',
+                                $transformedParts[$i]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        return str_replace($originalParts, $transformedParts, $content, $count);
+    }
+
+    /**
+     * @param string $file
+     * @return mixed
+     */
+    protected function fileSize(string $file)
+    {
+        return GeneralUtility::formatSize(
+            filesize($file),
+            $this->fileSizeUnits
+        );
     }
 
     /**
